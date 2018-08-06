@@ -6,10 +6,10 @@ import base64
 from PIL import Image
 from pytesseract import image_to_string
 
-sleeping_time = 2           # "human" delay time
+sleeping_time = 3           # "human" delay
 
 
-def parse_final_page(driver, url):
+def parse_final_page(driver, url):          # TODO: pagination on the final item's pages
     current_item = 0
     while True:
         elements = driver.find_elements_by_class_name("description-title-link")
@@ -19,41 +19,54 @@ def parse_final_page(driver, url):
         element = driver.find_element_by_class_name("seller-info-name")
         name = element.text
 
+        # element = driver.find_element_by_class_name("seller-info-name")
         element = driver.find_element_by_xpath("//div[@class='seller-info-prop']/div[@class='seller-info-value']")
         location = element.text
 
         number_element = driver.find_element_by_class_name("item-actions-line")
         number_element.click()
         time.sleep(sleeping_time)
-        e = driver.find_element_by_xpath("//div[@class='item-phone-big-number js-item-phone-big-number']/img")
-        e = e.get_attribute("src")
-        e = e.split(",")[1]
-        e = base64.b64decode(e)
-        file = open("number.png", "w+b")
-        file.write(e)
-        file.close()
+        try:
+            e = driver.find_element_by_class_name("item-phone-big-number")
+            e = e.find_element_by_tag_name("img")
+            e = e.get_attribute("src")
+            e = e.split(",")[1]
+            e = base64.b64decode(e)
+            file = open("number.png", "w+b")
+            file.write(e)
+            file.close()
 
-        path_image = "number.png"
-        numbers_image = Image.open(path_image)
-        number = image_to_string(numbers_image)
+            path_image = "number.png"
+            numbers_image = Image.open(path_image)
+            number = image_to_string(numbers_image)
 
-        print(name, number, location, sep=" ")
-        output_file = open("db.csv", "a")
-        writer = csv.writer(output_file)
-        inserted_row = [name, number, location]
-        writer.writerow(inserted_row)
-        output_file.close()
+            print(current_item, name, number, location, sep=" ")
+            output_file = open("db.csv", "a")
+            writer = csv.writer(output_file)
+            inserted_row = [name, number, location]
+            writer.writerow(inserted_row)
+            output_file.close()
+        except NoSuchElementException:
+            print("Exception!!!")
+
         if current_item == len(elements) - 1:
-            break
+            driver.get(url)
+            element = driver.find_element_by_class_name("js-pagination-next")
+            if element:
+                element.click()
+                url = driver.current_url
+                current_item = 0
+            else:
+                break
         else:
             current_item += 1
-
-        driver.get(url)
+            driver.get(url)
+    return
 
 
 def circumvention(url, driver):
     elements = driver.find_elements_by_class_name("js-catalog-counts__link")
-    if elements != []:
+    if elements:
         for i in range(0, len(elements)):
             next_url = elements[i].get_attribute("href")
             driver.get(next_url)
@@ -74,8 +87,8 @@ def circumvention(url, driver):
 
 
 start_urls = [
-    # "https://www.avito.ru/krasnoyarsk/odezhda_obuv_aksessuary/zhenskaya_odezhda/bryuki/40-42_xs?view=list",
-    "https://www.avito.ru/krasnoyarsk",
+    "https://www.avito.ru/krasnoyarsk/odezhda_obuv_aksessuary/zhenskaya_odezhda/bryuki/40-42_xs?view=list",
+    # "https://www.avito.ru/krasnoyarsk",
 ]
 
 try:
