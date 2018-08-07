@@ -9,7 +9,8 @@ from pytesseract import image_to_string
 sleeping_time = 3           # "human" delay
 
 
-def parse_final_page(driver, url):          # TODO: pagination on the final item's pages
+def parse_final_page(driver, url):
+    print('[+]', url, sep=' ')
     current_item = 0
     while True:
         elements = driver.find_elements_by_class_name("description-title-link")
@@ -19,7 +20,6 @@ def parse_final_page(driver, url):          # TODO: pagination on the final item
         element = driver.find_element_by_class_name("seller-info-name")
         name = element.text
 
-        # element = driver.find_element_by_class_name("seller-info-name")
         element = driver.find_element_by_xpath("//div[@class='seller-info-prop']/div[@class='seller-info-value']")
         location = element.text
 
@@ -51,12 +51,13 @@ def parse_final_page(driver, url):          # TODO: pagination on the final item
 
         if current_item == len(elements) - 1:
             driver.get(url)
-            element = driver.find_element_by_class_name("js-pagination-next")
-            if element:
+            try:
+                element = driver.find_element_by_class_name("js-pagination-next")
                 element.click()
                 url = driver.current_url
+                print('[+]', url, sep=' ')
                 current_item = 0
-            else:
+            except NoSuchElementException:
                 break
         else:
             current_item += 1
@@ -87,8 +88,9 @@ def circumvention(url, driver):
 
 
 start_urls = [
-    "https://www.avito.ru/krasnoyarsk/odezhda_obuv_aksessuary/zhenskaya_odezhda/bryuki/40-42_xs?view=list",
+    # "https://www.avito.ru/krasnoyarsk/odezhda_obuv_aksessuary/zhenskaya_odezhda/bryuki/40-42_xs?view=list",
     # "https://www.avito.ru/krasnoyarsk",
+    'https://www.avito.ru/krasnoyarsk/koshki?view=list&s_trg=10',
 ]
 
 try:
